@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -19,10 +20,13 @@ import (
 	"oss.terrastruct.com/d2/d2themes/d2themescatalog"
 )
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	}
+
 func IncludeHTML(path string) template.HTML {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Println("includeHTML - error reading file: %v", err)
 		return ""
 	}
 
@@ -30,7 +34,6 @@ func IncludeHTML(path string) template.HTML {
 }
 
 func GenerateDiagram(s string) string {
-	println(s)
 	graph, _ := d2compiler.Compile("", strings.NewReader(s), &d2compiler.CompileOptions{UTF16: true})
 	ruler, _ := textmeasure.NewRuler()
 	graph.SetDimensions(nil, ruler)
@@ -41,9 +44,14 @@ func GenerateDiagram(s string) string {
 	return "out.svg"
 }
 
-func GetDiagram(w http.ResponseWriter, r *http.Request) {
-	GenerateDiagram("a->b")
+type requestBody struct {
+	DiagramCode string `json:"diagramCode"`
+}
 
+func GetDiagram(w http.ResponseWriter, r *http.Request) {
+	var body requestBody
+	json.NewDecoder(r.Body).Decode(&body)
+	GenerateDiagram(body.DiagramCode)
 	tmpl := template.New("sample")
 	tmpl.Funcs(template.FuncMap{
 		"IncludeHTML": IncludeHTML,
@@ -60,6 +68,7 @@ func GetDiagram(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	enableCors(&w)
 	w.Header().Set("Content-Type", "text/html")
 	if err := tmpl.Execute(w, nil); err != nil {
 		log.Println("Error executing template: %v", err)
@@ -69,7 +78,7 @@ func GetDiagram(w http.ResponseWriter, r *http.Request) {
 func main() {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/get", GetDiagram).Methods("GET")
+	router.HandleFunc("/getSvg", GetDiagram).Methods("POST")
 
 	fmt.Println("Server at 8000")
 	log.Fatal(http.ListenAndServe(":8000", router))
