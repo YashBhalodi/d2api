@@ -22,7 +22,7 @@ import (
 
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	}
+}
 
 func IncludeHTML(path string) template.HTML {
 	b, err := ioutil.ReadFile(path)
@@ -58,12 +58,7 @@ func GetDiagram(w http.ResponseWriter, r *http.Request) {
 	})
 
 	tmpl, err := tmpl.Parse(`
-<!DOCTYPE>
-<html>
-<body>
     {{ IncludeHTML "out.svg" }}
-</body>
-</html>
     `)
 	if err != nil {
 		log.Fatal(err)
