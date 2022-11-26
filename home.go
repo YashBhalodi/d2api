@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -22,15 +22,6 @@ import (
 
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
-func IncludeHTML(path string) template.HTML {
-	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		return ""
-	}
-
-	return template.HTML(string(b))
 }
 
 func GenerateDiagram(s string) string {
@@ -51,23 +42,13 @@ type requestBody struct {
 func GetDiagram(w http.ResponseWriter, r *http.Request) {
 	var body requestBody
 	json.NewDecoder(r.Body).Decode(&body)
-	GenerateDiagram(body.DiagramCode)
-	tmpl := template.New("sample")
-	tmpl.Funcs(template.FuncMap{
-		"IncludeHTML": IncludeHTML,
-	})
-
-	tmpl, err := tmpl.Parse(`
-    {{ IncludeHTML "out.svg" }}
-    `)
-	if err != nil {
-		log.Fatal(err)
-	}
+	outputFilePath := GenerateDiagram(body.DiagramCode)
+	fileBytes, _ := ioutil.ReadFile(outputFilePath)
 	enableCors(&w)
 	w.Header().Set("Content-Type", "text/html")
-	if err := tmpl.Execute(w, nil); err != nil {
-		log.Println("Error executing template: %v", err)
-	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(fileBytes)
+	os.Remove(outputFilePath)
 }
 
 func main() {
