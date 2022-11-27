@@ -54,8 +54,13 @@ func GetDiagram(w http.ResponseWriter, r *http.Request) {
 func main() {
 	router := mux.NewRouter()
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	router.HandleFunc("/getSvg", GetDiagram).Methods("POST")
 
-	fmt.Println("Server at 8000")
-	log.Fatal(http.ListenAndServe(":8000", router))
+	fmt.Println("Server at " + port)
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }
