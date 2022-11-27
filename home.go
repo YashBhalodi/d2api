@@ -25,7 +25,11 @@ func enableCors(w *http.ResponseWriter) {
 }
 
 func GenerateDiagram(s string) string {
-	graph, _ := d2compiler.Compile("", strings.NewReader(s), &d2compiler.CompileOptions{UTF16: true})
+	graph, err := d2compiler.Compile("", strings.NewReader(s), &d2compiler.CompileOptions{UTF16: true})
+	if err != nil {
+		fmt.Println(err)
+		return "Error"
+	}
 	ruler, _ := textmeasure.NewRuler()
 	graph.SetDimensions(nil, ruler)
 	d2dagrelayout.Layout(context.Background(), graph)
@@ -43,6 +47,16 @@ func GetDiagram(w http.ResponseWriter, r *http.Request) {
 	var body requestBody
 	json.NewDecoder(r.Body).Decode(&body)
 	outputFilePath := GenerateDiagram(body.DiagramCode)
+	if outputFilePath == "Error" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		errorBody := make(map[string]string)
+		errorBody["errorMessage"] = "Compiler error"
+		errorBody["errorKey"] = "COMPILER_ERROR"
+		json.NewEncoder(w).Encode(errorBody)
+		return
+	}
+
 	fileBytes, _ := ioutil.ReadFile(outputFilePath)
 	enableCors(&w)
 	w.Header().Set("Content-Type", "text/html")

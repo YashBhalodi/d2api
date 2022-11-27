@@ -2,6 +2,8 @@
 
 [D2](https://github.com/terrastruct/d2) is modern diagram scripting language. I was fascinated by it and noticed that one of the [issue](https://github.com/terrastruct/d2/issues/207) was about building a web-playground where people can try things out without much fuss of setting it up locally.
 
+This API was built to support the project of playground
+
 ### API Deploy details
 
 URL to target: https://d2api.fly.dev/
@@ -13,7 +15,7 @@ Payload details:
 
 ```json
 {
-    diagramCode: "# D2 script here.
+    "diagramCode": "# D2 script here.
     x -> y"
 }
 ```
